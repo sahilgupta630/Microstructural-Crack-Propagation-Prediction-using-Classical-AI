@@ -45,7 +45,7 @@ A\* and Dijkstra find the **same optimal path** — proving our heuristic is adm
 
 ## Monte Carlo Failure Analysis
 
-![Monte Carlo Results](crack_result_monte_carlo.png)
+![Monte Carlo Results](monte_carlo_results.png)
 
 Run 50–1000 simulations with randomly varying microstructures to answer: **"What is the probability of this material failing?"**
 
@@ -67,28 +67,20 @@ Run 50–1000 simulations with randomly varying microstructures to answer: **"Wh
 ## Quick Start
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
 
-# Single A* run (default)
 python main.py
 
-# Algorithm comparison
 python main.py --compare
 
-# Monte Carlo analysis (100 simulations)
 python main.py --monte-carlo --mc-runs 100
 
-# From real SEM/EBSD image
 python main.py --image microstructure.png
 
-# Combine: compare algorithms on a real image
 python main.py --compare --image microstructure.png
 
-# Custom parameters
 python main.py --size 150 --n-grains 120 --seed 7
 
-# Headless + animation
 python main.py --no-show --animate
 ```
 
@@ -125,12 +117,12 @@ python main.py --no-show --animate
 AIFA_Project/
 ├── environment.py              # Voronoi microstructure generation
 ├── image_loader.py             # Real SEM/EBSD image input
-├── astar_search.py             # Corrected A* search
-├── algorithm_comparison.py     # Multi-algorithm comparison
+├── astar_search.py
+├── algorithm_comparison.py
 ├── monte_carlo.py              # Statistical failure analysis
-├── visualizer.py               # Matplotlib visualization
-├── main.py                     # CLI entry point
-├── requirements.txt            # Dependencies
+├── visualizer.py
+├── main.py
+├── requirements.txt
 └── README.md
 ```
 
@@ -144,7 +136,7 @@ AIFA_Project/
 
 ## Key Corrections from Naive Approaches
 
-| Issue | Naive Approach | Our Fix |
+| Issue | Naive Approach | Fix |
 |-------|---------------|---------|
 | Heuristic | `distance / SIF` (non-admissible) | `distance × min_toughness` (admissible) |
 | Units | `g(n)` in energy, `h(n)` in m/MPa√m | Both in energy-equivalent units |
