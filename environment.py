@@ -7,11 +7,11 @@ Generates a grid representing a metal microstructure with three phases:
   - Brittle inclusions (carbides/oxides) : K_IC ≈ 0.3 (low toughness, easy to crack)
 
 Uses Voronoi tessellation to create realistic polygonal grain shapes.
-Applied stress field decreases from left (crack initiation) to right (opposite boundary).
+Applied stress field decreases from left (crack initiation) to right
+(opposite boundary).
 """
 
 import numpy as np
-from scipy.spatial import Voronoi
 
 PHASE_FERRITE = 0
 PHASE_MARTENSITE = 1
@@ -30,11 +30,10 @@ PHASE_TOUGHNESS = {
 }
 
 PHASE_COLORS = {
-    PHASE_FERRITE: (0.35, 0.55, 0.85),       
-    PHASE_MARTENSITE: (0.25, 0.75, 0.45),     
-    PHASE_INCLUSION: (0.90, 0.30, 0.25),      
+    PHASE_FERRITE: (0.35, 0.55, 0.85),
+    PHASE_MARTENSITE: (0.25, 0.75, 0.45),
+    PHASE_INCLUSION: (0.90, 0.30, 0.25),
 }
-
 
 
 class Microstructure:
@@ -98,7 +97,6 @@ class Microstructure:
         self._build_toughness_grid()
         self._build_stress_field()
 
-
     def _generate_grains(self):
         """Create Voronoi-based grain regions."""
         seeds = self.rng.random((self.n_grains, 2))
@@ -106,7 +104,7 @@ class Microstructure:
         seeds[:, 1] *= self.height
         self.voronoi_seeds = seeds
 
-        yy, xx = np.mgrid[0:self.height, 0:self.width]
+        yy, xx = np.mgrid[0 : self.height, 0 : self.width]
         coords = np.stack([xx, yy], axis=-1).astype(float)
 
         dists = np.linalg.norm(
@@ -114,7 +112,6 @@ class Microstructure:
             axis=-1,
         )
         self.grain_id_grid = np.argmin(dists, axis=-1)
-
 
     def _assign_phases(self):
         """Randomly assign each grain a phase (ferrite / martensite / inclusion)."""
@@ -125,19 +122,18 @@ class Microstructure:
         )
         self.phase_grid = grain_phases[self.grain_id_grid]
 
-
     def _add_boundary_inclusions(self):
         """Place extra brittle inclusions at grain boundary pixels."""
         padded = np.pad(self.grain_id_grid, 1, mode="edge")
         boundary = np.zeros((self.height, self.width), dtype=bool)
         for dy, dx in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            shifted = padded[1 + dy : self.height + 1 + dy,
-                             1 + dx : self.width + 1 + dx]
-            boundary |= (shifted != self.grain_id_grid)
+            shifted = padded[
+                1 + dy : self.height + 1 + dy, 1 + dx : self.width + 1 + dx
+            ]
+            boundary |= shifted != self.grain_id_grid
 
-        inclusion_mask = (
-            boundary
-            & (self.rng.random((self.height, self.width)) < self.inclusion_boundary_prob)
+        inclusion_mask = boundary & (
+            self.rng.random((self.height, self.width)) < self.inclusion_boundary_prob
         )
         self.phase_grid[inclusion_mask] = PHASE_INCLUSION
 
@@ -153,7 +149,9 @@ class Microstructure:
         K_applied(x) = stress_max - (stress_max - stress_min) * (x / (width - 1))
         """
         x = np.linspace(self.stress_max, self.stress_min, self.width)
-        self.stress_grid = np.broadcast_to(x[np.newaxis, :], (self.height, self.width)).copy()
+        self.stress_grid = np.broadcast_to(
+            x[np.newaxis, :], (self.height, self.width)
+        ).copy()
 
     def edge_cost(self, r1, c1, r2, c2):
         """
@@ -184,13 +182,14 @@ class Microstructure:
     def summary(self):
         """Print a text summary of the microstructure."""
         total = self.width * self.height
-        counts = {name: np.sum(self.phase_grid == pid) for pid, name in PHASE_NAMES.items()}
+        counts = {
+            name: np.sum(self.phase_grid == pid) for pid, name in PHASE_NAMES.items()
+        }
         print(f"Microstructure: {self.width}×{self.height} ({total} pixels)")
         for name, count in counts.items():
             print(f"  {name:20s}: {count:5d} pixels ({100*count/total:.1f}%)")
         print(f"  Stress range: {self.stress_min:.2f} – {self.stress_max:.2f}")
         print(f"  K_threshold: {self.k_threshold:.2f}")
-
 
 
 if __name__ == "__main__":

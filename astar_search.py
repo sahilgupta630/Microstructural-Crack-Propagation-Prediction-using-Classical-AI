@@ -11,17 +11,18 @@ Fixes applied (from analysis):
 
 import heapq
 import math
-import numpy as np
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
-from environment import Microstructure
+import numpy as np
 
+from environment import Microstructure
 
 
 @dataclass
 class CrackResult:
     """Result of A* crack propagation search."""
+
     path: list[tuple[int, int]]
     total_cost: float
     outcome: str
@@ -35,7 +36,6 @@ class CrackResult:
             f"  Total cost  : {self.total_cost:.4f}\n"
             f"  Nodes explored: {self.nodes_explored}"
         )
-
 
 
 class AStarCrackSearch:
