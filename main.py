@@ -8,17 +8,17 @@ Entry point for all simulation modes:
   - Real image input (--image)
 
 Usage:
-    python main.py                                    
-    python main.py --compare                          
-    python main.py --monte-carlo --mc-runs 100       
-    python main.py --image microstructure.png          
+    python main.py
+    python main.py --compare
+    python main.py --monte-carlo --mc-runs 100
+    python main.py --image microstructure.png
 """
 
 import argparse
 import time
 
-from environment import Microstructure
 from astar_search import AStarCrackSearch
+from environment import Microstructure
 from visualizer import plot_result
 
 
@@ -29,6 +29,7 @@ def run_single(args):
 
     if args.image:
         from image_loader import microstructure_from_image
+
         micro = microstructure_from_image(
             args.image,
             grid_size=args.size,
@@ -40,11 +41,18 @@ def run_single(args):
         print(f"  Loaded from image: {args.image}")
     else:
         micro = Microstructure(
-            width=args.size, height=args.size,
+            width=args.size,
+            height=args.size,
             n_grains=args.n_grains,
-            phase_probs=(args.ferrite_ratio, args.martensite_ratio, args.inclusion_ratio),
-            stress_max=args.stress_max, stress_min=args.stress_min,
-            k_threshold=args.k_threshold, seed=args.seed,
+            phase_probs=(
+                args.ferrite_ratio,
+                args.martensite_ratio,
+                args.inclusion_ratio,
+            ),
+            stress_max=args.stress_max,
+            stress_min=args.stress_min,
+            k_threshold=args.k_threshold,
+            seed=args.seed,
         )
 
     t_env = time.time() - t0
@@ -64,6 +72,7 @@ def run_single(args):
 
     if args.animate:
         from visualizer import animate_exploration
+
         anim_path = args.output.rsplit(".", 1)[0] + "_animation.gif"
         animate_exploration(micro, result, save_path=anim_path)
 
@@ -78,18 +87,29 @@ def run_comparison(args):
     print("▸ Generating microstructure for comparison...")
     if args.image:
         from image_loader import microstructure_from_image
+
         micro = microstructure_from_image(
-            args.image, grid_size=args.size, method=args.seg_method,
-            stress_max=args.stress_max, stress_min=args.stress_min,
+            args.image,
+            grid_size=args.size,
+            method=args.seg_method,
+            stress_max=args.stress_max,
+            stress_min=args.stress_min,
             k_threshold=args.k_threshold,
         )
     else:
         micro = Microstructure(
-            width=args.size, height=args.size,
+            width=args.size,
+            height=args.size,
             n_grains=args.n_grains,
-            phase_probs=(args.ferrite_ratio, args.martensite_ratio, args.inclusion_ratio),
-            stress_max=args.stress_max, stress_min=args.stress_min,
-            k_threshold=args.k_threshold, seed=args.seed,
+            phase_probs=(
+                args.ferrite_ratio,
+                args.martensite_ratio,
+                args.inclusion_ratio,
+            ),
+            stress_max=args.stress_max,
+            stress_min=args.stress_min,
+            k_threshold=args.k_threshold,
+            seed=args.seed,
         )
     micro.summary()
     print()
@@ -104,7 +124,7 @@ def run_comparison(args):
 
 def run_monte_carlo(args):
     """Run Monte Carlo statistical analysis."""
-    from monte_carlo import MonteCarloAnalysis, plot_monte_carlo, export_csv
+    from monte_carlo import MonteCarloAnalysis, export_csv, plot_monte_carlo
 
     print(f"▸ Running Monte Carlo Analysis ({args.mc_runs} runs)...")
     print()
@@ -160,27 +180,54 @@ Modes:
     )
 
     # Mode selection
-    parser.add_argument("--compare", action="store_true",
-                        help="Run algorithm comparison (A* vs Dijkstra vs Greedy vs BFS)")
-    parser.add_argument("--monte-carlo", action="store_true",
-                        help="Run Monte Carlo statistical failure analysis")
-    parser.add_argument("--mc-runs", type=int, default=100,
-                        help="Number of Monte Carlo runs (default: 100)")
+    parser.add_argument(
+        "--compare",
+        action="store_true",
+        help="Run algorithm comparison (A* vs Dijkstra vs Greedy vs BFS)",
+    )
+    parser.add_argument(
+        "--monte-carlo",
+        action="store_true",
+        help="Run Monte Carlo statistical failure analysis",
+    )
+    parser.add_argument(
+        "--mc-runs",
+        type=int,
+        default=100,
+        help="Number of Monte Carlo runs (default: 100)",
+    )
 
     # Image input
-    parser.add_argument("--image", type=str, default=None,
-                        help="Path to SEM/EBSD image (replaces synthetic generation)")
-    parser.add_argument("--seg-method", type=str, default="kmeans",
-                        choices=["kmeans", "otsu", "watershed"],
-                        help="Image segmentation method (default: kmeans)")
+    parser.add_argument(
+        "--image",
+        type=str,
+        default=None,
+        help="Path to SEM/EBSD image (replaces synthetic generation)",
+    )
+    parser.add_argument(
+        "--seg-method",
+        type=str,
+        default="kmeans",
+        choices=["kmeans", "otsu", "watershed"],
+        help="Image segmentation method (default: kmeans)",
+    )
 
     # Grid parameters
-    parser.add_argument("--size", type=int, default=100,
-                        help="Grid width/height in pixels (default: 100)")
-    parser.add_argument("--n-grains", type=int, default=80,
-                        help="Number of Voronoi grains (default: 80)")
-    parser.add_argument("--seed", type=int, default=42,
-                        help="Random seed (default: 42)")
+    parser.add_argument(
+        "--size",
+        type=int,
+        default=100,
+        help="Grid width/height in pixels (default: 100)",
+    )
+    parser.add_argument(
+        "--n-grains",
+        type=int,
+        default=80,
+        help="Number of Voronoi grains (default: 80)",
+    )
+    parser.add_argument(
+        "--seed", type=int, default=42, help="Random seed (default: 42)"
+    )
 
     # Phase ratios
     parser.add_argument("--ferrite-ratio", type=float, default=0.55)

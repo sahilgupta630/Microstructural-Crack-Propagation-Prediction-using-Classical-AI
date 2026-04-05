@@ -14,16 +14,17 @@ path as Dijkstra but explores fewer nodes.
 import heapq
 import math
 import time
-import numpy as np
-import matplotlib.pyplot as plt
 from collections import deque
 from dataclasses import dataclass
 
-from environment import Microstructure
-from astar_search import AStarCrackSearch, CrackResult
+import matplotlib.pyplot as plt
+import numpy as np
 
+from astar_search import AStarCrackSearch, CrackResult
+from environment import Microstructure
 
 # ─── Dijkstra Search (A* with h=0) ───────────────────────────────────────────
+
 
 class DijkstraSearch:
     """Dijkstra's algorithm — optimal but explores more nodes than A*."""
@@ -60,8 +61,13 @@ class DijkstraSearch:
 
             if cc == goal_col:
                 path = _reconstruct(came_from, current)
-                return CrackResult(path, g_score[current], "FRACTURE",
-                                   len(closed_set), exploration_order)
+                return CrackResult(
+                    path,
+                    g_score[current],
+                    "FRACTURE",
+                    len(closed_set),
+                    exploration_order,
+                )
 
             for nr, nc in micro.get_neighbors(cr, cc):
                 if (nr, nc) in closed_set or not micro.can_propagate(nr, nc):
@@ -81,11 +87,17 @@ class DijkstraSearch:
             path = _reconstruct(came_from, farthest)
         else:
             path = [start]
-        return CrackResult(path, g_score.get(path[-1], 0.0), "ARREST",
-                           len(closed_set), exploration_order)
+        return CrackResult(
+            path,
+            g_score.get(path[-1], 0.0),
+            "ARREST",
+            len(closed_set),
+            exploration_order,
+        )
 
 
 # ─── Greedy Best-First Search (only h, no g) ─────────────────────────────────
+
 
 class GreedyBestFirstSearch:
     """Greedy best-first — fast but suboptimal. Uses only heuristic."""
@@ -128,8 +140,13 @@ class GreedyBestFirstSearch:
 
             if cc == goal_col:
                 path = _reconstruct(came_from, current)
-                return CrackResult(path, g_score[current], "FRACTURE",
-                                   len(closed_set), exploration_order)
+                return CrackResult(
+                    path,
+                    g_score[current],
+                    "FRACTURE",
+                    len(closed_set),
+                    exploration_order,
+                )
 
             for nr, nc in micro.get_neighbors(cr, cc):
                 if (nr, nc) in closed_set or not micro.can_propagate(nr, nc):
@@ -141,7 +158,9 @@ class GreedyBestFirstSearch:
                 if (nr, nc) not in g_score:
                     g_score[(nr, nc)] = tentative
                     came_from[(nr, nc)] = current
-                    heapq.heappush(open_set, (self._heuristic(nr, nc), counter, (nr, nc)))
+                    heapq.heappush(
+                        open_set, (self._heuristic(nr, nc), counter, (nr, nc))
+                    )
                     counter += 1
 
         if exploration_order:
@@ -149,11 +168,17 @@ class GreedyBestFirstSearch:
             path = _reconstruct(came_from, farthest)
         else:
             path = [start]
-        return CrackResult(path, g_score.get(path[-1], 0.0), "ARREST",
-                           len(closed_set), exploration_order)
+        return CrackResult(
+            path,
+            g_score.get(path[-1], 0.0),
+            "ARREST",
+            len(closed_set),
+            exploration_order,
+        )
 
 
 # ─── BFS (Unweighted — shortest hop count) ───────────────────────────────────
+
 
 class BFSSearch:
     """BFS — finds shortest-hop path, completely ignores edge costs."""
@@ -174,7 +199,6 @@ class BFSSearch:
         came_from = {}
         visited = {start}
         exploration_order = []
-        g_score = {start: 0.0}
 
         while queue:
             current = queue.popleft()
@@ -183,15 +207,24 @@ class BFSSearch:
 
             if cc == goal_col:
                 path = _reconstruct(came_from, current)
-                
+
                 # Calculate actual cost along the BFS path
                 total_cost = sum(
-                    micro.edge_cost(path[i][0], path[i][1], path[i+1][0], path[i+1][1])
-                    * (math.sqrt(2) if abs(path[i+1][0]-path[i][0]) + abs(path[i+1][1]-path[i][1]) == 2 else 1.0)
-                    for i in range(len(path)-1)
+                    micro.edge_cost(
+                        path[i][0], path[i][1], path[i + 1][0], path[i + 1][1]
+                    )
+                    * (
+                        math.sqrt(2)
+                        if abs(path[i + 1][0] - path[i][0])
+                        + abs(path[i + 1][1] - path[i][1])
+                        == 2
+                        else 1.0
+                    )
+                    for i in range(len(path) - 1)
                 )
-                return CrackResult(path, total_cost, "FRACTURE",
-                                   len(visited), exploration_order)
+                return CrackResult(
+                    path, total_cost, "FRACTURE", len(visited), exploration_order
+                )
 
             for nr, nc in micro.get_neighbors(cr, cc):
                 if (nr, nc) not in visited and micro.can_propagate(nr, nc):
@@ -204,15 +237,19 @@ class BFSSearch:
             path = _reconstruct(came_from, farthest)
         else:
             path = [start]
-        total_cost = sum(
-            micro.edge_cost(path[i][0], path[i][1], path[i+1][0], path[i+1][1])
-            for i in range(len(path)-1)
-        ) if len(path) > 1 else 0.0
-        return CrackResult(path, total_cost, "ARREST",
-                           len(visited), exploration_order)
+        total_cost = (
+            sum(
+                micro.edge_cost(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1])
+                for i in range(len(path) - 1)
+            )
+            if len(path) > 1
+            else 0.0
+        )
+        return CrackResult(path, total_cost, "ARREST", len(visited), exploration_order)
 
 
 # ─── Helper ──────────────────────────────────────────────────────────────────
+
 
 def _reconstruct(came_from, current):
     path = [current]
@@ -225,9 +262,11 @@ def _reconstruct(came_from, current):
 
 # ─── Run All Algorithms ──────────────────────────────────────────────────────
 
+
 @dataclass
 class ComparisonResult:
     """Results from comparing all algorithms."""
+
     algorithm: str
     result: CrackResult
     time_seconds: float
@@ -256,15 +295,18 @@ def compare_algorithms(
         result = searcher.search(start_row=start_row)
         elapsed = time.time() - t0
         results.append(ComparisonResult(name, result, elapsed))
-        print(f"  {name:20s} | Cost: {result.total_cost:8.4f} | "
-              f"Nodes: {result.nodes_explored:5d} | "
-              f"Path: {len(result.path):4d}px | "
-              f"Time: {elapsed:.4f}s | {result.outcome}")
+        print(
+            f"  {name:20s} | Cost: {result.total_cost:8.4f} | "
+            f"Nodes: {result.nodes_explored:5d} | "
+            f"Path: {len(result.path):4d}px | "
+            f"Time: {elapsed:.4f}s | {result.outcome}"
+        )
 
     return results
 
 
 # ─── Comparison Visualization ─────────────────────────────────────────────────
+
 
 def plot_comparison(
     microstructure: Microstructure,
@@ -276,8 +318,9 @@ def plot_comparison(
     from environment import PHASE_COLORS
 
     fig = plt.figure(figsize=(20, 16))
-    fig.suptitle("Algorithm Comparison — Crack Propagation",
-                 fontsize=18, fontweight="bold")
+    fig.suptitle(
+        "Algorithm Comparison — Crack Propagation", fontsize=18, fontweight="bold"
+    )
 
     # Build RGB base image
     micro = microstructure
@@ -300,11 +343,25 @@ def plot_comparison(
             pr = [p[0] for p in res.path]
             pc = [p[1] for p in res.path]
             ax.plot(pc, pr, color=algo_colors[i], linewidth=2.0, alpha=0.9)
-            ax.plot(pc[0], pr[0], "o", color="#00FF88", markersize=8,
-                    markeredgecolor="white", markeredgewidth=1.5)
+            ax.plot(
+                pc[0],
+                pr[0],
+                "o",
+                color="#00FF88",
+                markersize=8,
+                markeredgecolor="white",
+                markeredgewidth=1.5,
+            )
             end_color = "#FF0000" if res.outcome == "FRACTURE" else "#FFaa00"
-            ax.plot(pc[-1], pr[-1], "X", color=end_color, markersize=10,
-                    markeredgecolor="white", markeredgewidth=1.5)
+            ax.plot(
+                pc[-1],
+                pr[-1],
+                "X",
+                color=end_color,
+                markersize=10,
+                markeredgecolor="white",
+                markeredgewidth=1.5,
+            )
 
         # Show explored area
         if res.exploration_order:
@@ -312,9 +369,11 @@ def plot_comparison(
             ec = [p[1] for p in res.exploration_order]
             ax.scatter(ec, er, c=algo_colors[i], s=0.2, alpha=0.1)
 
-        ax.set_title(f"{comp.algorithm}\nCost: {res.total_cost:.4f} | "
-                     f"Nodes: {res.nodes_explored} | Time: {comp.time_seconds:.4f}s",
-                     fontsize=10)
+        ax.set_title(
+            f"{comp.algorithm}\nCost: {res.total_cost:.4f} | "
+            f"Nodes: {res.nodes_explored} | Time: {comp.time_seconds:.4f}s",
+            fontsize=10,
+        )
         ax.set_xlim(-0.5, micro.width - 0.5)
         ax.set_ylim(micro.height - 0.5, -0.5)
 
@@ -322,7 +381,7 @@ def plot_comparison(
     names = [c.algorithm for c in results]
     costs = [c.result.total_cost for c in results]
     nodes = [c.result.nodes_explored for c in results]
-    times = [c.time_seconds for c in results]
+    [c.time_seconds for c in results]
 
     # Cost comparison
     ax_cost = fig.add_subplot(3, 2, 5)
@@ -336,7 +395,7 @@ def plot_comparison(
         if abs(cost - min_cost) < 1e-6:
             bar.set_edgecolor("#FFD700")
             bar.set_linewidth(3)
-    ax_cost.tick_params(axis='x', labelsize=8)
+    ax_cost.tick_params(axis="x", labelsize=8)
 
     # Nodes explored comparison
     ax_nodes = fig.add_subplot(3, 2, 6)
@@ -348,7 +407,7 @@ def plot_comparison(
         if n == min_nodes:
             bar.set_edgecolor("#FFD700")
             bar.set_linewidth(3)
-    ax_nodes.tick_params(axis='x', labelsize=8)
+    ax_nodes.tick_params(axis="x", labelsize=8)
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
 
