@@ -10,20 +10,15 @@ Supports:
   - Any image format supported by PIL (PNG, TIFF, JPEG, BMP)
 """
 
-import numpy as np
 from pathlib import Path
 
+import numpy as np
 from PIL import Image
 from skimage import filters, morphology, segmentation
 from sklearn.cluster import KMeans
 
-from environment import (
-    Microstructure,
-    PHASE_FERRITE, PHASE_MARTENSITE, PHASE_INCLUSION,
-    PHASE_TOUGHNESS,
-)
-
-
+from environment import (PHASE_FERRITE, PHASE_INCLUSION, PHASE_MARTENSITE,
+                         PHASE_TOUGHNESS, Microstructure)
 
 DEFAULT_PROPERTY_MAP = {
     "dark": {
@@ -44,8 +39,9 @@ DEFAULT_PROPERTY_MAP = {
 }
 
 
-
-def load_image(path: str | Path, target_size: tuple[int, int] | None = None) -> np.ndarray:
+def load_image(
+    path: str | Path, target_size: tuple[int, int] | None = None
+) -> np.ndarray:
     """
     Load an image and convert to grayscale numpy array.
 
@@ -69,7 +65,6 @@ def load_image(path: str | Path, target_size: tuple[int, int] | None = None) -> 
         img = img.resize(target_size, Image.LANCZOS)
 
     return np.array(img, dtype=float) / 255.0
-
 
 
 def segment_kmeans(image: np.ndarray, n_phases: int = 3) -> np.ndarray:
@@ -125,13 +120,13 @@ def segment_watershed(image: np.ndarray, n_phases: int = 3) -> np.ndarray:
     np.ndarray : Phase label grid (H, W).
     """
     from skimage.filters import sobel
+
     gradient = sobel(image)
 
     markers = segment_kmeans(image, n_phases)
 
     labels = segmentation.watershed(gradient, markers=markers + 1)
     return labels - 1
-
 
 
 def labels_to_phases(
@@ -167,7 +162,6 @@ def labels_to_phases(
     return phase_grid
 
 
-
 def clean_segmentation(phase_grid: np.ndarray, min_grain_size: int = 20) -> np.ndarray:
     """
     Remove small spurious regions from segmentation.
@@ -185,16 +179,16 @@ def clean_segmentation(phase_grid: np.ndarray, min_grain_size: int = 20) -> np.n
     """
     cleaned = phase_grid.copy()
     for phase_id in np.unique(phase_grid):
-        mask = (phase_grid == phase_id)
+        mask = phase_grid == phase_id
         cleaned_mask = morphology.remove_small_objects(mask, min_size=min_grain_size)
         removed = mask & ~cleaned_mask
         if np.any(removed):
             from scipy.ndimage import distance_transform_edt
+
             _, indices = distance_transform_edt(removed, return_indices=True)
             cleaned[removed] = cleaned[indices[0][removed], indices[1][removed]]
 
     return cleaned
-
 
 
 def microstructure_from_image(
@@ -247,18 +241,17 @@ def microstructure_from_image(
     if clean:
         phase_grid = clean_segmentation(phase_grid)
         micro = Microstructure(
-        width=grid_size,
-        height=grid_size,
-        stress_max=stress_max,
-        stress_min=stress_min,
-        k_threshold=k_threshold,
-    )
+            width=grid_size,
+            height=grid_size,
+            stress_max=stress_max,
+            stress_min=stress_min,
+            k_threshold=k_threshold,
+        )
 
     micro.phase_grid = phase_grid
     micro._build_toughness_grid()
 
     return micro
-
 
 
 if __name__ == "__main__":

@@ -9,21 +9,16 @@ Renders:
   5. Annotated summary (cost, path length, outcome)
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from matplotlib.colors import ListedColormap
+import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib import animation
 
-from environment import (
-    Microstructure,
-    PHASE_FERRITE, PHASE_MARTENSITE, PHASE_INCLUSION,
-    PHASE_COLORS, PHASE_NAMES,
-)
 from astar_search import CrackResult
-
+from environment import (PHASE_COLORS, PHASE_NAMES, Microstructure)
 
 # ─── Static Plot ──────────────────────────────────────────────────────────────
+
 
 def plot_result(
     micro: Microstructure,
@@ -54,7 +49,9 @@ def plot_result(
     show_stress : bool
         Whether to overlay the stress field contours.
     """
-    fig, axes = plt.subplots(1, 2, figsize=(18, 8), gridspec_kw={"width_ratios": [1.2, 1]})
+    fig, axes = plt.subplots(
+        1, 2, figsize=(18, 8), gridspec_kw={"width_ratios": [1.2, 1]}
+    )
     fig.suptitle(title, fontsize=16, fontweight="bold", color="#222")
 
     # ── Left panel: Microstructure + Crack Path ─────────────────────────
@@ -85,8 +82,12 @@ def plot_result(
         exp_rows = [p[0] for p in result.exploration_order]
         exp_cols = [p[1] for p in result.exploration_order]
         ax1.scatter(
-            exp_cols, exp_rows,
-            c="yellow", s=0.3, alpha=0.15, zorder=2,
+            exp_cols,
+            exp_rows,
+            c="yellow",
+            s=0.3,
+            alpha=0.15,
+            zorder=2,
             label=f"Explored ({result.nodes_explored} nodes)",
         )
 
@@ -96,20 +97,42 @@ def plot_result(
         path_cols = [p[1] for p in result.path]
 
         # Draw path shadow
-        ax1.plot(path_cols, path_rows, color="black", linewidth=3.5, alpha=0.6, zorder=3)
-        
+        ax1.plot(
+            path_cols, path_rows, color="black", linewidth=3.5, alpha=0.6, zorder=3
+        )
+
         # Draw path itself with color gradient
-        ax1.plot(path_cols, path_rows, color="#FF4444", linewidth=2.0, alpha=0.95, zorder=4)
+        ax1.plot(
+            path_cols, path_rows, color="#FF4444", linewidth=2.0, alpha=0.95, zorder=4
+        )
 
         # Start and end markers
-        ax1.plot(path_cols[0], path_rows[0], "o",
-                 color="#00FF88", markersize=10, markeredgecolor="white",
-                 markeredgewidth=2, zorder=5, label="Crack initiation")
+        ax1.plot(
+            path_cols[0],
+            path_rows[0],
+            "o",
+            color="#00FF88",
+            markersize=10,
+            markeredgecolor="white",
+            markeredgewidth=2,
+            zorder=5,
+            label="Crack initiation",
+        )
         marker_color = "#FF0000" if result.outcome == "FRACTURE" else "#FFaa00"
-        marker_label = "Complete fracture" if result.outcome == "FRACTURE" else "Crack arrested"
-        ax1.plot(path_cols[-1], path_rows[-1], "X",
-                 color=marker_color, markersize=12, markeredgecolor="white",
-                 markeredgewidth=2, zorder=5, label=marker_label)
+        marker_label = (
+            "Complete fracture" if result.outcome == "FRACTURE" else "Crack arrested"
+        )
+        ax1.plot(
+            path_cols[-1],
+            path_rows[-1],
+            "X",
+            color=marker_color,
+            markersize=12,
+            markeredgecolor="white",
+            markeredgewidth=2,
+            zorder=5,
+            label=marker_label,
+        )
 
     # Legend
     phase_patches = [
@@ -118,7 +141,9 @@ def plot_result(
     ]
     ax1.legend(
         handles=phase_patches + ax1.get_legend_handles_labels()[0][-3:],
-        loc="upper left", fontsize=7, framealpha=0.85,
+        loc="upper left",
+        fontsize=7,
+        framealpha=0.85,
     )
 
     ax1.set_xlim(-0.5, micro.width - 0.5)
@@ -132,8 +157,12 @@ def plot_result(
 
     # Toughness heatmap
     im = ax2.imshow(
-        micro.toughness_grid, origin="upper", aspect="equal",
-        cmap="inferno", vmin=0, vmax=4.0,
+        micro.toughness_grid,
+        origin="upper",
+        aspect="equal",
+        cmap="inferno",
+        vmin=0,
+        vmax=4.0,
     )
     plt.colorbar(im, ax=ax2, label="Fracture Toughness K_IC", shrink=0.8)
 
@@ -157,8 +186,12 @@ def plot_result(
         f"Grid: {micro.width}×{micro.height}"
     )
     fig.text(
-        0.5, 0.02, summary_text,
-        ha="center", va="bottom", fontsize=10,
+        0.5,
+        0.02,
+        summary_text,
+        ha="center",
+        va="bottom",
+        fontsize=10,
         fontfamily="monospace",
         bbox=dict(boxstyle="round,pad=0.5", facecolor="#f0f0f0", edgecolor="#ccc"),
     )
@@ -176,6 +209,7 @@ def plot_result(
 
 
 # ─── Animated Exploration ────────────────────────────────────────────────────
+
 
 def animate_exploration(
     micro: Microstructure,
@@ -209,13 +243,15 @@ def animate_exploration(
             rgb[:, :, c_idx][mask] = color[c_idx]
 
     ax.imshow(rgb, origin="upper", aspect="equal")
-    ax.set_title("A*tomic Fracture — Exploration Animation", fontsize=14, fontweight="bold")
+    ax.set_title(
+        "A*tomic Fracture — Exploration Animation", fontsize=14, fontweight="bold"
+    )
 
     # Scatter for explored nodes (updated each frame)
     scat = ax.scatter([], [], c="yellow", s=1.0, alpha=0.3, zorder=2)
 
     # Line for final path (drawn at end)
-    path_line, = ax.plot([], [], color="#FF4444", linewidth=2.0, zorder=4)
+    (path_line,) = ax.plot([], [], color="#FF4444", linewidth=2.0, zorder=4)
 
     n_explore = len(result.exploration_order)
     n_frames = n_explore // step_size + 2  # +1 for final path frame
@@ -238,7 +274,11 @@ def animate_exploration(
         return scat, path_line
 
     anim = animation.FuncAnimation(
-        fig, update, frames=n_frames, interval=interval, blit=True,
+        fig,
+        update,
+        frames=n_frames,
+        interval=interval,
+        blit=True,
     )
     anim.save(save_path, writer="pillow", fps=30)
     print(f"Animation saved → {save_path}")
